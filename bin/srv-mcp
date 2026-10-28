@@ -146,6 +146,17 @@ cmd_log() {
   tail -n "${2:-20}" "$f"
 }
 
+python_proyecto() {
+  # Instalado con instalar.sh: .venv junto al código. Como plugin de Claude Code: el
+  # hook SessionStart crea el venv en ~/.claude/plugins/data/servidor-mcp*/venv.
+  local py
+  for py in "$PROYECTO/.venv/bin/python" "$HOME"/.claude/plugins/data/servidor-mcp*/venv/bin/python; do
+    [[ -x "$py" ]] && { echo "$py"; return; }
+  done
+  echo "No encuentro el entorno de Python de servidor-mcp. Corre instalar.sh o abre una sesión nueva de Claude con el plugin activo." >&2
+  exit 1
+}
+
 case "${1:-}" in
   setup)  cmd_setup ;;
   on)     cmd_on "${2:-}" ;;
@@ -154,6 +165,7 @@ case "${1:-}" in
   list)   cmd_list ;;
   log)    cmd_log "${2:-}" "${3:-20}" ;;
   run|estado|logs|leer|escribir)
-          exec "$PROYECTO/.venv/bin/python" -m servidor_mcp.cli "$@" ;;
+          py=$(python_proyecto) || exit 1
+          exec "$py" -m servidor_mcp.cli "$@" ;;
   *)      usage ;;
 esac

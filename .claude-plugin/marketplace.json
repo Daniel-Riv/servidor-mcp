@@ -1,0 +1,12 @@
+{
+  "name": "servidor-mcp",
+  "owner": { "name": "Daniel Rivas", "url": "https://github.com/Daniel-Riv" },
+  "description": "Plugins para trabajar en servidores Linux por SSH desde Claude Code.",
+  "plugins": [
+    {
+      "name": "servidor-mcp",
+      "source": "./",
+      "description": "Trabaja en tus servidores Linux por SSH desde Claude sin darle tu contraseña."
+    }
+  ]
+}

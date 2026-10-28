@@ -38,13 +38,38 @@ Requisitos: Python 3.11+, OpenSSH y git. Los comandos funcionan desde cualquier 
 
 ### 1. Instalar
 
+**Opción A: plugin de Claude Code (recomendada).** Dentro de Claude Code:
+
+```
+/plugin install servidor-mcp --marketplace Daniel-Riv/servidor-mcp
+```
+
+En versiones anteriores a 2.1.275, en dos pasos:
+`/plugin marketplace add Daniel-Riv/servidor-mcp` y luego
+`/plugin install servidor-mcp@servidor-mcp`.
+
+Abre una **sesión nueva**: al iniciar, el plugin prepara Python solo (unos segundos la
+primera vez). Para tener el comando `srv-mcp` en tu terminal, crea el atajo una vez:
+
+```bash
+mkdir -p ~/bin && ln -sf ~/.claude/plugins/data/servidor-mcp-servidor-mcp/srv-mcp ~/bin/srv-mcp
+```
+
+(si `~/bin` no está en tu PATH: `echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc`).
+El comando en Claude es `/servidor-mcp:access-server`. Se actualiza con
+`/plugin update servidor-mcp`.
+
+**Opción B: clonar el repo** (sin plugins, o para usar el MCP con otras IAs):
+
 ```bash
 git clone https://github.com/Daniel-Riv/servidor-mcp.git ~/servidor-mcp && ~/servidor-mcp/instalar.sh
 ```
 
 El instalador crea `.venv` con las dependencias, deja el comando `srv-mcp` en `~/bin`
-(y lo agrega al PATH) e instala la skill `/access-server` para Claude Code.
-**Abre una terminal nueva** al terminar. Comprueba con `srv-mcp`: debe mostrar la ayuda.
+(y lo agrega al PATH) e instala la skill como `/access-server`.
+
+No uses las dos opciones a la vez (tendrías la skill duplicada). **Abre una terminal
+nueva** al terminar. Comprueba con `srv-mcp`: debe mostrar la ayuda.
 
 ### 2. Registrar cada servidor
 
@@ -101,10 +126,11 @@ srv-mcp run dev "hostname && uptime"
 En una **sesión nueva** de Claude:
 
 ```
-/access-server revisa el estado de dev
+/servidor-mcp:access-server revisa el estado de dev
 ```
 
-Claude solo toca servidores cuando escribes `/access-server`. Cada comando te lo muestra
+(Con la opción B el comando es `/access-server`.) Claude solo toca servidores cuando
+escribes ese comando. Cada comando te lo muestra
 antes de ejecutarlo; los cambios los consulta primero. Al terminar:
 
 ```bash
@@ -128,12 +154,13 @@ cd ~/servidor-mcp && git pull && ./instalar.sh
 | `srv-mcp setup` "se queda quieto" | Está esperando tu respuesta: escríbela en la terminal y Enter. |
 | `journalctl` muestra `-- No entries --` | Tu usuario no está en el grupo `systemd-journal` (ver "Antes de empezar"). |
 | La IA dice "está en modo 'lectura'" | Ese servidor es solo lectura; se cambia en `~/.srv-mcp/config.toml`. |
-| `/access-server` no aparece en Claude | Abre una sesión nueva; si sigue sin aparecer, vuelve a correr `./instalar.sh`. |
+| El comando no aparece en Claude | Abre una sesión nueva. Plugin: revisa que esté activo en `/plugin`. Opción B: vuelve a correr `./instalar.sh`. |
+| `No encuentro el entorno de Python` | Plugin: abre una sesión nueva para que se prepare (necesita Python 3.11+). Opción B: corre `./instalar.sh`. |
 | `sudo` falla | No es interactivo: corre ese comando tú mismo, o configura `NOPASSWD` para él. |
 
 ## Otras IAs (Claude Desktop, Cursor…): servidor MCP
 
-La skill `/access-server` usa `srv-mcp run/estado/logs/leer/escribir`, con las mismas
+La skill usa `srv-mcp run/estado/logs/leer/escribir`, con las mismas
 reglas y bitácora que el servidor MCP. Si prefieres que Claude Code pueda usarlo sin `/`,
 instala con `./instalar.sh --mcp`.
 

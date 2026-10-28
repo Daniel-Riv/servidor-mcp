@@ -9,18 +9,32 @@ argument-hint: "[servidor] qué revisar o hacer"
 
 Pedido del usuario: $ARGUMENTS
 
-Trabajas en servidores reales por SSH con el comando `srv-mcp` (en el PATH del usuario;
-si responde "command not found", usa `~/bin/srv-mcp` en todos los comandos).
+Trabajas en servidores reales por SSH con el comando `srv-mcp`.
 La conexión la abre el usuario con su contraseña; tú nunca la ves ni la pides.
+
+Ruta del comando: si `srv-mcp` responde "command not found", usa
+`${CLAUDE_PLUGIN_ROOT}/bin/srv-mcp` (instalado como plugin) o `~/bin/srv-mcp`
+(instalado con instalar.sh; úsala también si la ruta anterior aparece con `${` sin
+reemplazar).
 
 ## Primer paso, siempre
 
 ```bash
 srv-mcp status
 ```
-Muestra los servidores y si su sesión está abierta. Si el servidor que necesitas está
-**cerrado**, detente y pide al usuario que corra en su terminal `srv-mcp on <alias>`
-(es interactivo, tú no puedes). Si el pedido no dice en qué servidor, pregunta.
+Muestra los servidores y si su sesión está abierta.
+
+Comandos para la terminal del usuario: si en su terminal no existe `srv-mcp`, dale la ruta
+fija del plugin, `~/.claude/plugins/data/servidor-mcp-servidor-mcp/srv-mcp` (verifica que
+exista con `ls`), y sugiérele una vez crear el atajo:
+`mkdir -p ~/bin && ln -sf ~/.claude/plugins/data/servidor-mcp-servidor-mcp/srv-mcp ~/bin/srv-mcp`.
+
+- **No hay servidores registrados:** el usuario debe registrarlos en su terminal (es
+  interactivo, tú no puedes) con `srv-mcp setup`. Explícale que pregunta alias, IP,
+  usuario, puerto, si se entra pasando por otro servidor y si es solo lectura.
+- **El servidor está cerrado:** pide al usuario que corra en su terminal
+  `srv-mcp on <alias>` y espera.
+- Si el pedido no dice en qué servidor, pregunta.
 
 ## Herramientas
 

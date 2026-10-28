@@ -1,6 +1,6 @@
 [project]
 name = "servidor-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Servidor MCP para que las IAs trabajen en servidores Linux por SSH"
 requires-python = ">=3.11"
 dependencies = ["mcp>=2.3,<3"]

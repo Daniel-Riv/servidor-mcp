@@ -42,11 +42,11 @@ fi
 
 paso "Skill /access-server para Claude Code"
 mkdir -p "$SKILLS"
-# Quita enlaces de nombres anteriores de la skill (apuntan a .../skill/access-server-*).
+# Quita enlaces de nombres anteriores de la skill (apuntan a .../skill[s]/access-server-*).
 for viejo in "$SKILLS"/access-server-*; do
-  [[ -L "$viejo" && "$(readlink "$viejo")" == */skill/access-server-* ]] && rm "$viejo" && echo "  Quité el nombre anterior: $(basename "$viejo")"
+  [[ -L "$viejo" && "$(readlink "$viejo")" == */skill*/access-server-* ]] && rm "$viejo" && echo "  Quité el nombre anterior: $(basename "$viejo")"
 done
-ln -sfn "$PROYECTO/skill/access-server" "$SKILLS/access-server"
+ln -sfn "$PROYECTO/skills/access-server" "$SKILLS/access-server"
 
 if $CON_MCP; then
   paso "Servidor MCP en Claude Code"
