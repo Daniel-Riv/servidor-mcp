@@ -9,7 +9,8 @@ argument-hint: "[servidor] qué revisar o hacer"
 
 Pedido del usuario: $ARGUMENTS
 
-Trabajas en servidores reales por SSH con el comando `srv-mcp` (en el PATH del usuario).
+Trabajas en servidores reales por SSH con el comando `srv-mcp` (en el PATH del usuario;
+si responde "command not found", usa `~/bin/srv-mcp` en todos los comandos).
 La conexión la abre el usuario con su contraseña; tú nunca la ves ni la pides.
 
 ## Primer paso, siempre
