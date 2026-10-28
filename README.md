@@ -48,6 +48,15 @@ En versiones anteriores a 2.1.275, en dos pasos:
 `/plugin marketplace add Daniel-Riv/servidor-mcp` y luego
 `/plugin install servidor-mcp@servidor-mcp`.
 
+O desde la terminal (sirve también si usas la app de escritorio):
+
+```bash
+claude plugin marketplace add Daniel-Riv/servidor-mcp
+```
+```bash
+claude plugin install servidor-mcp@servidor-mcp
+```
+
 Abre una **sesión nueva**: al iniciar, el plugin prepara Python solo (unos segundos la
 primera vez). Para tener el comando `srv-mcp` en tu terminal, crea el atajo una vez:
 
