@@ -1,0 +1,19 @@
+[project]
+name = "servidor-mcp"
+version = "0.1.0"
+description = "Servidor MCP para que las IAs trabajen en servidores Linux por SSH"
+requires-python = ">=3.11"
+dependencies = ["mcp>=2.3,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+servidor-mcp = "servidor_mcp.server:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["servidor_mcp"]

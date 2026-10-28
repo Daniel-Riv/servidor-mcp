@@ -1,0 +1,19 @@
+# Copia este archivo a ~/.srv-mcp/config.toml y ajústalo.
+
+# "completo": la IA puede ejecutar cualquier comando (por defecto).
+# "lectura":  se rechazan comandos que parecen modificar el servidor y escribir_archivo.
+modo = "completo"
+
+# Expresiones regulares que se rechazan siempre, en cualquier modo.
+bloqueados = [
+  # '\breboot\b',
+  # '\bshutdown\b',
+  # 'rm\s+-rf\s+/',
+  # 'docker\s+compose\s+down',
+]
+
+# Segundos máximos por comando.
+timeout = 120
+
+# Caracteres máximos de salida que se devuelven a la IA.
+max_salida = 30000

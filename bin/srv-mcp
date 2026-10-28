@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+# srv-mcp — prepara el acceso SSH que usa el servidor MCP.
+# Tú escribes la contraseña una vez (srv-mcp on); el servidor MCP reutiliza la
+# conexión abierta (ControlMaster) hasta que la cierres o expire.
+set -euo pipefail
+
+SSH_DIR="$HOME/.ssh"
+SSH_CONFIG="$SSH_DIR/config"
+CM_DIR="$SSH_DIR/cm"
+PERSIST="${SRV_MCP_PERSIST:-8h}"
+LOG_DIR="$HOME/.srv-mcp/logs"
+
+usage() {
+  cat <<EOF
+Uso: srv-mcp <comando> [alias]
+
+  setup            Registra un servidor nuevo (pregunta host, usuario, puerto)
+  on <alias>       Abre la sesión: pide tu contraseña y la deja abierta ($PERSIST)
+  off <alias>      Cierra la sesión: las IAs pierden el acceso al instante
+  status [alias]   Muestra si la sesión está abierta (todas si no das alias)
+  list             Lista los servidores registrados
+  log <alias> [n]  Bitácora: últimos n comandos que ejecutaron las IAs (20 por defecto)
+EOF
+}
+
+ask() { # ask "Pregunta" "default" -> echo respuesta
+  local reply
+  read -r -p "$1${2:+ [$2]}: " reply
+  echo "${reply:-$2}"
+}
+
+managed_aliases() {
+  [[ -f "$SSH_CONFIG" ]] || return 0
+  awk '/^# srv-mcp:/ { getline; if ($1 == "Host") print $2 }' "$SSH_CONFIG"
+}
+
+require_alias() {
+  [[ -n "${1:-}" ]] || { echo "Falta el alias. Usa: srv-mcp list" >&2; exit 1; }
+  managed_aliases | grep -qx "$1" || { echo "Alias '$1' no registrado. Corre: srv-mcp setup" >&2; exit 1; }
+}
+
+cmd_setup() {
+  local alias host user port
+  alias=$(ask "Nombre corto para el servidor (ej. tecon-prod)" "")
+  [[ "$alias" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "Alias inválido: solo letras, números, . _ -" >&2; exit 1; }
+  if managed_aliases | grep -qx "$alias"; then
+    echo "El alias '$alias' ya existe en $SSH_CONFIG" >&2; exit 1
+  fi
+  host=$(ask "IP o dominio del servidor" "")
+  [[ -n "$host" ]] || { echo "El host es obligatorio" >&2; exit 1; }
+  user=$(ask "Usuario SSH" "$(whoami)")
+  port=$(ask "Puerto SSH" "22")
+
+  mkdir -p "$SSH_DIR" "$CM_DIR"
+  chmod 700 "$SSH_DIR" "$CM_DIR"
+  touch "$SSH_CONFIG"
+  chmod 600 "$SSH_CONFIG"
+
+  # Se agrega al inicio: en ssh_config gana la primera coincidencia.
+  local tmp block
+  tmp=$(mktemp)
+  block=$(cat <<EOF
+# srv-mcp: $alias
+Host $alias
+  HostName $host
+  User $user
+  Port $port
+  ControlMaster auto
+  ControlPath ~/.ssh/cm/%C
+  ControlPersist $PERSIST
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+# srv-mcp: fin $alias
+EOF
+)
+  { printf '%s\n\n' "$block"; cat "$SSH_CONFIG"; } > "$tmp"
+  cat "$tmp" > "$SSH_CONFIG"
+  rm -f "$tmp"
+  echo "✓ Agregado '$alias' a $SSH_CONFIG"
+  echo
+  echo "Para dar acceso a las IAs:  srv-mcp on $alias"
+}
+
+cmd_on() {
+  require_alias "${1:-}"
+  if ssh -O check "$1" 2>/dev/null; then
+    echo "La sesión '$1' ya está abierta."; return
+  fi
+  echo "Escribe tu contraseña del servidor (solo tú la ves):"
+  ssh -fNM "$1"
+  echo "✓ Sesión '$1' abierta por $PERSIST. Las IAs ya pueden usar el servidor."
+  echo "  Para cortar el acceso: srv-mcp off $1"
+}
+
+cmd_off() {
+  require_alias "${1:-}"
+  if ssh -O exit "$1" 2>/dev/null; then
+    echo "✓ Sesión '$1' cerrada. Las IAs ya no tienen acceso."
+  else
+    echo "La sesión '$1' no estaba abierta."
+  fi
+}
+
+cmd_status() {
+  local aliases a
+  if [[ -n "${1:-}" ]]; then require_alias "$1"; aliases=$1; else aliases=$(managed_aliases); fi
+  [[ -n "$aliases" ]] || { echo "No hay servidores. Corre: srv-mcp setup"; return; }
+  for a in $aliases; do
+    if ssh -O check "$a" 2>/dev/null; then echo "● $a  abierta"; else echo "○ $a  cerrada"; fi
+  done
+}
+
+cmd_list() {
+  local aliases
+  aliases=$(managed_aliases)
+  [[ -n "$aliases" ]] && echo "$aliases" || echo "No hay servidores. Corre: srv-mcp setup"
+}
+
+cmd_log() {
+  require_alias "${1:-}"
+  local f="$LOG_DIR/$1.log"
+  [[ -f "$f" ]] || { echo "Sin comandos registrados para '$1'."; return; }
+  tail -n "${2:-20}" "$f"
+}
+
+case "${1:-}" in
+  setup)  cmd_setup ;;
+  on)     cmd_on "${2:-}" ;;
+  off)    cmd_off "${2:-}" ;;
+  status) cmd_status "${2:-}" ;;
+  list)   cmd_list ;;
+  log)    cmd_log "${2:-}" "${3:-20}" ;;
+  *)      usage ;;
+esac

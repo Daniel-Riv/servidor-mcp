@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# ssh falso para pruebas: ejecuta el comando en local.
+# La sesión de <alias> está "abierta" si existe el archivo $FAKE_SSH_OPEN/<alias>.
+op=""
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -F|-o) shift 2 ;;
+    -O) op=$2; shift 2 ;;
+    *) break ;;
+  esac
+done
+alias=$1; shift
+if [[ -n "$op" ]]; then [[ -f "$FAKE_SSH_OPEN/$alias" ]]; exit; fi
+if [[ "$alias" == caido ]]; then
+  echo "ssh: connect to host caido port 22: Connection refused" >&2; exit 255
+fi
+exec bash -c "$1"
