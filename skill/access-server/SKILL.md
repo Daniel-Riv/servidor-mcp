@@ -1,6 +1,6 @@
 ---
-name: access-server-dan
-description: Trabajar en los servidores Linux del usuario por SSH con srv-mcp.
+name: access-server
+description: Trabajar en los servidores Linux del usuario por SSH con srv-mcp (estado, logs, archivos, comandos).
 disable-model-invocation: true
 argument-hint: "[servidor] qué revisar o hacer"
 ---

@@ -26,26 +26,35 @@ Cada llamada aparece en tu cliente de IA con el comando exacto, y queda en la bi
 
 ## Instalación (cada persona, en su Mac o Linux)
 
-Requisitos: Python 3.11+ y OpenSSH.
+Requisitos: Python 3.11+, OpenSSH y acceso a este repositorio.
 
 ```bash
-cd servidor-mcp
-python3 -m venv .venv && .venv/bin/pip install -e .
-mkdir -p ~/bin && ln -sf "$PWD/bin/srv-mcp" ~/bin/srv-mcp
+gh repo clone Daniel-Riv/servidor-mcp ~/servidor-mcp && ~/servidor-mcp/instalar.sh
 ```
 
-Si `~/bin` no está en tu PATH, agrega a `~/.zshrc`: `export PATH="$HOME/bin:$PATH"`
+El instalador (se puede repetir para actualizar, después de `git pull`):
+- crea `.venv` con las dependencias,
+- deja el comando `srv-mcp` en `~/bin` y lo agrega al PATH,
+- instala la skill `/access-server` para Claude Code.
 
-### Conectarlo a tu IA
+Luego, en una terminal nueva: `srv-mcp setup` por cada servidor y `srv-mcp on <servidor>`.
+
+### Claude Code: `/access-server`
+
+Claude Code solo toca servidores **cuando tú lo pides** escribiendo:
+
+```
+/access-server revisa los logs de nginx en prod
+```
+
+La skill usa `srv-mcp run/estado/logs/leer/escribir`, con las mismas reglas y bitácora que
+el servidor MCP. Si prefieres que Claude pueda usarlo sin `/`, instala con
+`./instalar.sh --mcp`.
+
+### Otras IAs (Claude Desktop, Cursor…): servidor MCP
 
 El comando del servidor es la ruta absoluta a `.venv/bin/servidor-mcp`.
-
-**Claude Code**
-```bash
-claude mcp add servidor --scope user -- "$PWD/.venv/bin/servidor-mcp"
-```
-
-**Claude Desktop / Cursor / otros** (archivo de configuración MCP del cliente):
+En el archivo de configuración MCP del cliente:
 ```json
 {
   "mcpServers": {
@@ -55,19 +64,6 @@ claude mcp add servidor --scope user -- "$PWD/.venv/bin/servidor-mcp"
 ```
 - Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Cursor: `~/.cursor/mcp.json`
-
-### Claude Code solo con `/access-server-dan` (alternativa al MCP)
-
-Si prefieres que Claude Code toque servidores **solo cuando tú lo pidas** con `/`, no
-registres el MCP ahí y usa la skill incluida, que ejecuta con el mismo motor
-(`srv-mcp run/estado/logs/leer/escribir`, mismas reglas y bitácora):
-
-```bash
-mkdir -p ~/.claude/skills && ln -sf "$PWD/skill/access-server-dan" ~/.claude/skills/access-server-dan
-claude mcp remove servidor --scope user   # si lo habías agregado
-```
-
-Uso: `/access-server-dan revisa los logs de nginx en prod`
 
 ## Servidores detrás de otro (dev/prod por salto)
 
