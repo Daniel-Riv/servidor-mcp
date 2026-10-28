@@ -50,7 +50,7 @@ require_alias() {
 
 cmd_setup() {
   local alias host user port
-  alias=$(ask "Nombre corto para el servidor (ej. tecon-prod)" "")
+  alias=$(ask "Nombre corto para el servidor (ej. dev, prod)" "")
   [[ "$alias" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "Alias inválido: solo letras, números, . _ -" >&2; exit 1; }
   if managed_aliases | grep -qx "$alias"; then
     echo "El alias '$alias' ya existe en $SSH_CONFIG" >&2; exit 1
