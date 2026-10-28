@@ -2,7 +2,17 @@
   "name": "servidor-mcp",
   "version": "0.2.0",
   "description": "Trabaja en tus servidores Linux por SSH desde Claude sin darle tu contraseña: estado, logs, archivos y comandos, con modo solo lectura y bitácora.",
-  "author": { "name": "Daniel Rivas", "url": "https://github.com/Daniel-Riv" },
+  "author": {
+    "name": "Daniel Rivas",
+    "url": "https://github.com/Daniel-Riv"
+  },
   "repository": "https://github.com/Daniel-Riv/servidor-mcp",
-  "keywords": ["ssh", "servidores", "devops", "linux", "logs"]
+  "license": "MIT",
+  "keywords": [
+    "ssh",
+    "servidores",
+    "devops",
+    "linux",
+    "logs"
+  ]
 }

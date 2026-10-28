@@ -3,6 +3,7 @@ name = "servidor-mcp"
 version = "0.2.0"
 description = "Servidor MCP para que las IAs trabajen en servidores Linux por SSH"
 requires-python = ">=3.11"
+license = "MIT"
 dependencies = ["mcp>=2.3,<3"]
 
 [project.optional-dependencies]
