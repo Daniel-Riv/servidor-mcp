@@ -62,7 +62,7 @@ def _formatear(cfg: config.Config, comando: str, r: ssh.Resultado) -> str:
 async def _correr(servidor: str, comando: str, timeout: int | None = None, verificar: bool = True) -> str:
     cfg = config.cargar()
     _validar(cfg, servidor)
-    if verificar and (motivo := cfg.motivo_bloqueo(comando)):
+    if verificar and (motivo := cfg.motivo_bloqueo(comando, servidor)):
         raise ToolError(f"Comando rechazado: {motivo}. Comando: {comando}")
     try:
         r = await ssh.ejecutar(cfg, servidor, comando, timeout)
@@ -80,10 +80,11 @@ async def listar_servidores() -> str:
     registrados = ssh.servidores(cfg)
     if not registrados:
         return "No hay servidores registrados. El usuario debe correr `srv-mcp setup`."
-    lineas = [f"Modo: {cfg.modo}"]
+    lineas = []
     for alias in registrados:
         abierta = await ssh.sesion_abierta(cfg, alias)
-        lineas.append(f"- {alias}: {'sesión abierta' if abierta else 'sesión cerrada (srv-mcp on ' + alias + ')'}")
+        estado = "sesión abierta" if abierta else f"sesión cerrada (srv-mcp on {alias})"
+        lineas.append(f"- {alias}: {estado}, modo {cfg.modo_de(alias)}")
     return "\n".join(lineas)
 
 
@@ -165,8 +166,8 @@ async def escribir_archivo(servidor: str, ruta: str, contenido: str, respaldo: b
     No usa sudo: solo funciona en rutas donde el usuario SSH puede escribir.
     """
     cfg = config.cargar()
-    if cfg.modo == "lectura":
-        raise ToolError("Comando rechazado: el servidor MCP está en modo 'lectura'.")
+    if cfg.modo_de(servidor) == "lectura":
+        raise ToolError(f"Comando rechazado: '{servidor}' está en modo 'lectura'.")
     datos = base64.b64encode(contenido.encode()).decode()
     if len(datos) > 100_000:
         raise ToolError("Contenido demasiado grande (máx. ~75 KB).")

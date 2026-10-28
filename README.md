@@ -56,6 +56,28 @@ claude mcp add servidor --scope user -- "$PWD/.venv/bin/servidor-mcp"
 - Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Cursor: `~/.cursor/mcp.json`
 
+### Claude Code solo con `/access-server-dan` (alternativa al MCP)
+
+Si prefieres que Claude Code toque servidores **solo cuando tú lo pidas** con `/`, no
+registres el MCP ahí y usa la skill incluida, que ejecuta con el mismo motor
+(`srv-mcp run/estado/logs/leer/escribir`, mismas reglas y bitácora):
+
+```bash
+mkdir -p ~/.claude/skills && ln -sf "$PWD/skill/access-server-dan" ~/.claude/skills/access-server-dan
+claude mcp remove servidor --scope user   # si lo habías agregado
+```
+
+Uso: `/access-server-dan revisa los logs de nginx en prod`
+
+## Servidores detrás de otro (dev/prod por salto)
+
+`srv-mcp setup` pregunta si se entra pasando por otro servidor ya registrado y configura
+`ProxyJump`. Cada uno tiene su propio usuario y contraseña:
+
+```bash
+srv-mcp on prod    # pide la contraseña del salto (si no está abierta) y luego la de prod
+```
+
 ## Uso diario
 
 ```bash
@@ -75,6 +97,10 @@ Por defecto todo está permitido. Cada usuario lo cambia en su archivo
 modo = "lectura"                       # "completo" (defecto) o "lectura"
 bloqueados = ['\breboot\b', 'rm -rf']  # regex que se rechazan siempre
 timeout = 120                          # segundos por comando
+
+[servidores."prod"]                    # ajustes por servidor (setup lo crea si eliges solo lectura)
+modo = "lectura"
+bloqueados = ['virsh destroy']
 ```
 
 Los cambios aplican en la siguiente llamada; no hay que reiniciar nada.

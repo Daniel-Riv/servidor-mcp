@@ -110,6 +110,33 @@ def test_bloqueados_personalizados_aplican_en_modo_completo(entorno):
     assert not err
 
 
+def test_modo_lectura_por_servidor(entorno):
+    (entorno / "config.toml").write_text('[servidores."caido"]\nmodo = "lectura"\n')
+    err, txt = llamar("ejecutar_comando", {"servidor": "caido", "comando": "systemctl restart nginx"})
+    assert err and "'caido' está en modo 'lectura'" in txt
+    err, txt = llamar("ejecutar_comando", {"servidor": "web", "comando": "rm -f /nonexistent-x"})
+    assert not err, txt
+    err, txt = llamar("listar_servidores")
+    assert "web: sesión abierta, modo completo" in txt and "caido: sesión abierta, modo lectura" in txt
+
+
+def test_bloqueados_por_servidor(entorno):
+    (entorno / "config.toml").write_text('[servidores."web"]\nbloqueados = ["virsh destroy"]\n')
+    err, txt = llamar("ejecutar_comando", {"servidor": "web", "comando": "virsh destroy vm1"})
+    assert err and "virsh destroy" in txt
+
+
+def test_cli_usa_las_mismas_reglas(entorno, capsys):
+    from servidor_mcp import cli
+    (entorno / "config.toml").write_text('[servidores."web"]\nmodo = "lectura"\n')
+    assert cli.main(["run", "web", "echo hola"]) == 0
+    assert "hola" in capsys.readouterr().out
+    assert cli.main(["run", "web", "rm -rf /tmp/x"]) == 1
+    assert "modo 'lectura'" in capsys.readouterr().err
+    assert cli.main(["logs", "web", "docker"]) == 1
+    assert (entorno / "logs" / "web.log").read_text().count("echo hola") == 1
+
+
 def test_leer_y_escribir_archivo_con_respaldo(entorno):
     ruta = entorno / "conf con espacio.txt"
     ruta.write_text("viejo\n")

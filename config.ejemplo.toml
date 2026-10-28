@@ -12,6 +12,11 @@ bloqueados = [
   # 'docker\s+compose\s+down',
 ]
 
+# Ajustes por servidor (alias de srv-mcp). Sobrescriben el modo general y suman bloqueados.
+# [servidores."prod"]
+# modo = "lectura"
+# bloqueados = ['virsh destroy']
+
 # Segundos máximos por comando.
 timeout = 120
 

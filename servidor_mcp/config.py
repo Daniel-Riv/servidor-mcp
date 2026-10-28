@@ -28,25 +28,34 @@ PATRONES_ESCRITURA = [
 ]
 
 
+MODOS = ("completo", "lectura")
+
+
 @dataclass
 class Config:
     modo: str = "completo"  # "completo" | "lectura"
     bloqueados: list[str] = field(default_factory=list)  # regex, aplican en cualquier modo
+    # Ajustes por servidor: {"prod": {"modo": "lectura", "bloqueados": [...]}}
+    servidores: dict[str, dict] = field(default_factory=dict)
     timeout: int = 120
     max_salida: int = 30_000
     ssh: str = "ssh"
     ssh_config: Path = Path.home() / ".ssh" / "config"
     logs: Path = BASE_DIR / "logs"
 
-    def motivo_bloqueo(self, comando: str) -> str | None:
+    def modo_de(self, servidor: str) -> str:
+        return self.servidores.get(servidor, {}).get("modo", self.modo)
+
+    def motivo_bloqueo(self, comando: str, servidor: str) -> str | None:
         """Devuelve por qué se rechaza el comando, o None si está permitido."""
-        for patron in self.bloqueados:
+        propios = self.servidores.get(servidor, {}).get("bloqueados", [])
+        for patron in [*self.bloqueados, *propios]:
             if re.search(patron, comando):
                 return f"bloqueado por la regla '{patron}' de la configuración"
-        if self.modo == "lectura":
+        if self.modo_de(servidor) == "lectura":
             for patron in PATRONES_ESCRITURA:
                 if re.search(patron, comando):
-                    return "el servidor MCP está en modo 'lectura' y el comando parece modificar el servidor"
+                    return f"'{servidor}' está en modo 'lectura' y el comando parece modificar el servidor"
         return None
 
 
@@ -56,14 +65,16 @@ def cargar() -> Config:
     cfg = Config(
         modo=datos.get("modo", "completo"),
         bloqueados=list(datos.get("bloqueados", [])),
+        servidores=dict(datos.get("servidores", {})),
         timeout=int(datos.get("timeout", 120)),
         max_salida=int(datos.get("max_salida", 30_000)),
         ssh=os.environ.get("SRV_MCP_SSH", "ssh"),
         ssh_config=Path(os.environ.get("SRV_MCP_SSH_CONFIG", Path.home() / ".ssh" / "config")),
         logs=BASE_DIR / "logs",
     )
-    if cfg.modo not in ("completo", "lectura"):
-        raise ValueError(f"modo inválido en {ruta}: '{cfg.modo}' (usa 'completo' o 'lectura')")
-    for patron in cfg.bloqueados:
+    modos = [cfg.modo, *(s.get("modo", cfg.modo) for s in cfg.servidores.values())]
+    if invalidos := [m for m in modos if m not in MODOS]:
+        raise ValueError(f"modo inválido en {ruta}: '{invalidos[0]}' (usa 'completo' o 'lectura')")
+    for patron in [*cfg.bloqueados, *(p for s in cfg.servidores.values() for p in s.get("bloqueados", []))]:
         re.compile(patron)
     return cfg

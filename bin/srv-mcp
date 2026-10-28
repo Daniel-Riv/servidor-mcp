@@ -9,6 +9,8 @@ SSH_CONFIG="$SSH_DIR/config"
 CM_DIR="$SSH_DIR/cm"
 PERSIST="${SRV_MCP_PERSIST:-8h}"
 LOG_DIR="$HOME/.srv-mcp/logs"
+CONFIG="${SRV_MCP_CONFIG:-$HOME/.srv-mcp/config.toml}"
+PROYECTO="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 
 usage() {
   cat <<EOF
@@ -20,6 +22,13 @@ Uso: srv-mcp <comando> [alias]
   status [alias]   Muestra si la sesión está abierta (todas si no das alias)
   list             Lista los servidores registrados
   log <alias> [n]  Bitácora: últimos n comandos que ejecutaron las IAs (20 por defecto)
+
+Usados por la IA (mismas reglas y bitácora que el servidor MCP):
+  run <alias> "comando" [--timeout N]
+  estado <alias>
+  logs <alias> servicio|docker|archivo|sistema [nombre] [-n N] [--filtro X] [--desde X]
+  leer <alias> <ruta> [-n N] [--final]
+  escribir <alias> <ruta>        (contenido por stdin; respalda el archivo anterior)
 EOF
 }
 
@@ -50,6 +59,13 @@ cmd_setup() {
   [[ -n "$host" ]] || { echo "El host es obligatorio" >&2; exit 1; }
   user=$(ask "Usuario SSH" "$(whoami)")
   port=$(ask "Puerto SSH" "22")
+  local existentes jump lectura
+  existentes=$(managed_aliases | tr '\n' ' ')
+  jump=$(ask "¿Se entra pasando por otro servidor? Escribe su alias (${existentes:-ninguno registrado}) o Enter si es directo" "")
+  if [[ -n "$jump" ]] && ! managed_aliases | grep -qx "$jump"; then
+    echo "El servidor de salto '$jump' no está registrado. Regístralo primero con: srv-mcp setup" >&2; exit 1
+  fi
+  lectura=$(ask "¿Solo lectura? La IA no podrá hacer cambios (s/n)" "n")
 
   mkdir -p "$SSH_DIR" "$CM_DIR"
   chmod 700 "$SSH_DIR" "$CM_DIR"
@@ -64,7 +80,8 @@ cmd_setup() {
 Host $alias
   HostName $host
   User $user
-  Port $port
+  Port $port${jump:+
+  ProxyJump $jump}
   ControlMaster auto
   ControlPath ~/.ssh/cm/%C
   ControlPersist $PERSIST
@@ -76,7 +93,13 @@ EOF
   { printf '%s\n\n' "$block"; cat "$SSH_CONFIG"; } > "$tmp"
   cat "$tmp" > "$SSH_CONFIG"
   rm -f "$tmp"
-  echo "✓ Agregado '$alias' a $SSH_CONFIG"
+  echo "✓ Agregado '$alias' a $SSH_CONFIG${jump:+ (pasando por $jump)}"
+
+  if [[ "$lectura" =~ ^[sSyY] ]]; then
+    mkdir -p "$(dirname "$CONFIG")"
+    printf '\n[servidores."%s"]\nmodo = "lectura"\n' "$alias" >> "$CONFIG"
+    echo "✓ '$alias' en modo solo lectura (se cambia en $CONFIG)"
+  fi
   echo
   echo "Para dar acceso a las IAs:  srv-mcp on $alias"
 }
@@ -130,5 +153,7 @@ case "${1:-}" in
   status) cmd_status "${2:-}" ;;
   list)   cmd_list ;;
   log)    cmd_log "${2:-}" "${3:-20}" ;;
+  run|estado|logs|leer|escribir)
+          exec "$PROYECTO/.venv/bin/python" -m servidor_mcp.cli "$@" ;;
   *)      usage ;;
 esac
