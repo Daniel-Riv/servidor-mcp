@@ -24,24 +24,22 @@ Tú:   srv-mcp off dev            → la IA pierde el acceso al instante
 Cada llamada aparece en tu cliente de IA con el comando exacto, y queda en la bitácora
 `~/.srv-mcp/logs/<servidor>.log` (`srv-mcp log <servidor>`).
 
-## Antes de empezar (lo hace el administrador)
+## Antes de empezar (lo hace el administrador de los servidores)
 
-1. **Dar acceso al repositorio:** en GitHub → Settings → Collaborators → invitar a la persona.
-2. **Crear su propio usuario SSH** en cada servidor (no compartan usuarios: así la
-   bitácora y los permisos son de cada quien y se puede revocar a uno sin afectar a otros).
-3. Opcional, para que pueda leer logs de servicios (`journalctl`), en cada servidor:
+1. **Crear un usuario SSH propio** para cada persona en cada servidor (no compartan
+   usuarios: así la bitácora y los permisos son de cada quien y se puede revocar a uno
+   sin afectar a otros).
+2. Opcional, para que pueda leer logs de servicios (`journalctl`), en cada servidor:
    `sudo usermod -aG systemd-journal <usuario>`
 
 ## Guía paso a paso (cada persona, en su Mac o Linux)
 
-Requisitos: Python 3.11+, OpenSSH, [GitHub CLI](https://cli.github.com) con sesión
-iniciada (`gh auth login`) y acceso al repositorio. Los comandos funcionan desde
-cualquier carpeta.
+Requisitos: Python 3.11+, OpenSSH y git. Los comandos funcionan desde cualquier carpeta.
 
 ### 1. Instalar
 
 ```bash
-gh repo clone Daniel-Riv/servidor-mcp ~/servidor-mcp && ~/servidor-mcp/instalar.sh
+git clone https://github.com/Daniel-Riv/servidor-mcp.git ~/servidor-mcp && ~/servidor-mcp/instalar.sh
 ```
 
 El instalador crea `.venv` con las dependencias, deja el comando `srv-mcp` en `~/bin`
