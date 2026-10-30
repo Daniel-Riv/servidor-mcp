@@ -43,16 +43,22 @@ managed_aliases() {
   awk '/^# srv-mcp:/ { getline; if ($1 == "Host") print $2 }' "$SSH_CONFIG"
 }
 
+# Sin grep -q: con pipefail, si grep sale antes de que awk termine, awk muere por
+# SIGPIPE y el pipeline falla aunque el alias sí exista.
+alias_registrado() {
+  managed_aliases | grep -x -- "$1" >/dev/null
+}
+
 require_alias() {
   [[ -n "${1:-}" ]] || { echo "Falta el alias. Usa: srv-mcp list" >&2; exit 1; }
-  managed_aliases | grep -qx "$1" || { echo "Alias '$1' no registrado. Corre: srv-mcp setup" >&2; exit 1; }
+  alias_registrado "$1" || { echo "Alias '$1' no registrado. Corre: srv-mcp setup" >&2; exit 1; }
 }
 
 cmd_setup() {
   local alias host user port
   alias=$(ask "Nombre corto para el servidor (ej. dev, prod)" "")
   [[ "$alias" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "Alias inválido: solo letras, números, . _ -" >&2; exit 1; }
-  if managed_aliases | grep -qx "$alias"; then
+  if alias_registrado "$alias"; then
     echo "El alias '$alias' ya existe en $SSH_CONFIG" >&2; exit 1
   fi
   host=$(ask "IP o dominio del servidor" "")
@@ -62,7 +68,7 @@ cmd_setup() {
   local existentes jump lectura
   existentes=$(managed_aliases | tr '\n' ' ')
   jump=$(ask "¿Se entra pasando por otro servidor? Escribe su alias (${existentes:-ninguno registrado}) o Enter si es directo" "")
-  if [[ -n "$jump" ]] && ! managed_aliases | grep -qx "$jump"; then
+  if [[ -n "$jump" ]] && ! alias_registrado "$jump"; then
     echo "El servidor de salto '$jump' no está registrado. Regístralo primero con: srv-mcp setup" >&2; exit 1
   fi
   lectura=$(ask "¿Solo lectura? La IA no podrá hacer cambios (s/n)" "n")
